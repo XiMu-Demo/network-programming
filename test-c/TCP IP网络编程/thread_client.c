@@ -50,7 +50,7 @@ void* receive_msg(void* arg)
     return NULL;
 }
 
-void client (int argc, char* argv[])
+void client11 (int argc, char* argv[])
 {
     int sock;
     struct sockaddr_in server_address;
@@ -87,7 +87,7 @@ void client (int argc, char* argv[])
 }
 
 
-int main (int argc, char* argv[])
+int main111(int argc, char* argv[])
 {
     client(argc,argv);
     return 0;

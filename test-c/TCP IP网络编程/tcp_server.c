@@ -144,7 +144,7 @@ void server(int argc, char *argv[])
     fclose(writefp);
 }
 
-int  main(int argc, char *argv[])
+int  main12211(int argc, char *argv[])
 {
     dup_split_server(argc, argv);
 

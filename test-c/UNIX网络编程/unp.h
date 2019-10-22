@@ -9,7 +9,7 @@
 
 /* If anything changes in the following list of #includes, must change
    acsite.m4 also, for configure's tests. */
-#include "error.c"
+//#include "error.c"
 #include	<sys/types.h>	/* basic system data types */
 #include	<sys/socket.h>	/* basic socket definitions */
 #include	<sys/time.h>	/* timeval{} for select() */

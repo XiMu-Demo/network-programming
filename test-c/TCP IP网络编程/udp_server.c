@@ -17,7 +17,7 @@
 static void error_handling (char *message);
 
 
-int main3 (int argc, char* argv[])
+int main3222 (int argc, char* argv[])
 {
     int server_sock = 0;
     char message[BUF_SIZE];

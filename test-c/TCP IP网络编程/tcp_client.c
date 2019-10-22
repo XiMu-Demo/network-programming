@@ -135,7 +135,7 @@ void client (int argc, char* argv[])
 }
 
 
-int main (int argc, char* argv[])
+int main2(int argc, char* argv[])
 {
     half_close_client(argc,argv);
     return 0;

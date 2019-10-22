@@ -13,12 +13,13 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
-
+#include <sys/poll.h>
+#include <limits.h>
 #define BUF_SIZE 30
 
 void select_server(int argc, char *argv[])
 {
+    
     int server_socket, client_socket;
     struct sockaddr_in server_address, client_address;
     struct timeval timeout;
@@ -58,6 +59,7 @@ void select_server(int argc, char *argv[])
         if (fd_num == 0) {
             continue;
         }
+        
         //开启三个客户端连接，然后观察输出
         for (i = 0; i < fd_max + 1; i++) {
             if (FD_ISSET(i, &copy_reads)) {//监听的的fd发生变化
@@ -134,7 +136,7 @@ void select_console(void)
 
 
 
-int main(int argc, char *argv[])
+int main12(int argc, char *argv[])
 {
     select_server(argc,argv) ;
     return 0;

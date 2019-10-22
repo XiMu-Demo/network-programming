@@ -92,15 +92,50 @@ int max_int(int n, ...);
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+void (*funP)(int);
+ void (*funA)(int);
+void myFun(int x);
+typedef void (*funB)(int);//函数指针
+typedef void funC (int);//函数类型
+
+
+void myFun(int x)
+{
+    printf("myFun: %d\n",x);
+}
+
+static void test_fun_point()
+{
+    funB funb;
+    funC *func; //funC是函数类型，所以func是指向此函数类型的指针
+
+    myFun(100);
+    
+    //myFun与funP的类型关系类似于int 与int *的关系。
+    funP=&myFun;  //将myFun函数的地址赋给funP变量
+    (*funP)(200);  //通过函数指针变量来调用函数
+    
+    //myFun与funA的类型关系类似于int 与int 的关系。
+    funA=myFun;
+    funA(300);
+    
+    funb = funA;
+    funb(500);
+    
+    func = funA;
+    func(550);
+    
+    //三个貌似错乱的调用
+    funP(600);
+    (*funA)(700);
+    (*myFun)(800);
+}
+
+
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
-        int i = 100;
-        int *j = &i;
-        char tx[100];
-        tx[0] = -18;
-//        scanf("%d", (int *)&tx[0]);
-        printf("%d \n",(int)tx[0]);
-        
+        test_fun_point();
+
     }
     return 0;
 }

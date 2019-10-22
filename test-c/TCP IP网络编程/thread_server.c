@@ -117,7 +117,7 @@ int client_cnt = 0;
 int client_socks[256];
 pthread_mutex_t mutx;
 
-void send_msg(char *msg, long length)
+void send_msg11(char *msg, long length)
 {
     int i;
     pthread_mutex_lock(&mutx);
@@ -210,7 +210,7 @@ void multi_thread_server(int argc, char *argv[])
 
 }
 
-int main(int argc, char *argv[])
+int main122(int argc, char *argv[])
 {
     multi_thread_server(argc,argv);
     return 0;

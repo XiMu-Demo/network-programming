@@ -109,7 +109,7 @@ int remove_zombine(void)
     return 0;
 }
 
-void error_handling(char *message)
+static void error_handling(char *message)
 {
     fputs(message, stderr);
     fputc('\n', stderr);
@@ -235,7 +235,7 @@ int muliti_pipe_process_server(int argc, char *argv[])
     pid = fork();
     if (pid == 0)
     {
-        FILE* fp = fopen("/Users/nishikiyuzu/学习/iOS/代码/测试代码/C_DEMO/C_DEMO/123.txt","wt");
+        FILE* fp = fopen("/Users/shengwang/学习/network-programming/test-c/TCP IP网络编程/123.txt","wt");
         char msgbuf[BUF_SIZE] = "";
         int i;
         long len;
@@ -250,7 +250,6 @@ int muliti_pipe_process_server(int argc, char *argv[])
         fclose(fp);
         return 0;
     }
- 
  
     while (1)
     {
@@ -282,7 +281,7 @@ int muliti_pipe_process_server(int argc, char *argv[])
     return 0;
 }
 
-int main(int argc, char *argv[])
+int main231122(int argc, char *argv[])
 {
     muliti_pipe_process_server(argc, argv);
   

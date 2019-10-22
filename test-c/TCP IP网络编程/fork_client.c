@@ -15,7 +15,7 @@
 
 
 #define BUF_SIZE 1000
-void error_handling(char *message)
+static void error_handling(char *message)
 {
     fputs(message, stderr);
     fputc('\n', stderr);
@@ -92,7 +92,7 @@ void split_read_wirte_client (int argc, char *argv[])
 
 
 
-void client(int argc, char *argv[])
+static void client(int argc, char *argv[])
 {
     int sock;
     struct sockaddr_in server_address;
@@ -145,7 +145,7 @@ void client(int argc, char *argv[])
     close(sock);
 }
 
-int main(int argc, char *argv[])
+int main121211(int argc, char *argv[])
 {
     split_read_wirte_client(argc, argv);
     return 0;

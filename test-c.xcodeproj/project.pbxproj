@@ -7,7 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		461DD8992356B6AF00BE0846 /* fork_server.c in Sources */ = {isa = PBXBuildFile; fileRef = 461DD8972356B6AF00BE0846 /* fork_server.c */; };
+		461DD89A2356B6AF00BE0846 /* fork_client.c in Sources */ = {isa = PBXBuildFile; fileRef = 461DD8982356B6AF00BE0846 /* fork_client.c */; };
+		462060852351AA3C0048BD12 /* day_time.c in Sources */ = {isa = PBXBuildFile; fileRef = 462060842351AA3C0048BD12 /* day_time.c */; };
 		464CFF0C231D2232003C04AA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 464CFF0B231D2232003C04AA /* main.m */; };
+		465581C4235D6A2000BD3FB4 /* BDO_decrypt.c in Sources */ = {isa = PBXBuildFile; fileRef = 465581C3235D6A1F00BD3FB4 /* BDO_decrypt.c */; };
 		465DA13523389BDD0027E1F2 /* FileIO.c in Sources */ = {isa = PBXBuildFile; fileRef = 465DA13423389BDD0027E1F2 /* FileIO.c */; };
 		465DA138233A0E0E0027E1F2 /* tcp_server.c in Sources */ = {isa = PBXBuildFile; fileRef = 465DA137233A0E0E0027E1F2 /* tcp_server.c */; };
 		465DA13A233A0E1A0027E1F2 /* tcp_client.c in Sources */ = {isa = PBXBuildFile; fileRef = 465DA139233A0E1A0027E1F2 /* tcp_client.c */; };
@@ -37,8 +41,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4600EE892351AE8D005BCD28 /* unp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = unp.h; sourceTree = "<group>"; };
+		4600EE8A2351AE92005BCD28 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
+		461DD8972356B6AF00BE0846 /* fork_server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fork_server.c; sourceTree = "<group>"; };
+		461DD8982356B6AF00BE0846 /* fork_client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fork_client.c; sourceTree = "<group>"; };
+		461DD89B2356B74A00BE0846 /* 123.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = 123.txt; sourceTree = "<group>"; };
+		462060842351AA3C0048BD12 /* day_time.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = day_time.c; sourceTree = "<group>"; };
 		464CFF08231D2232003C04AA /* test-c */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "test-c"; sourceTree = BUILT_PRODUCTS_DIR; };
 		464CFF0B231D2232003C04AA /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		465581C3235D6A1F00BD3FB4 /* BDO_decrypt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BDO_decrypt.c; sourceTree = "<group>"; };
 		465DA1302338990D0027E1F2 /* File */ = {isa = PBXFileReference; lastKnownFileType = text; path = File; sourceTree = "<group>"; };
 		465DA13423389BDD0027E1F2 /* FileIO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FileIO.c; sourceTree = "<group>"; };
 		465DA1362338BB6B0027E1F2 /* File1 */ = {isa = PBXFileReference; lastKnownFileType = text; path = File1; sourceTree = "<group>"; };
@@ -72,6 +83,7 @@
 		46206081235181B40048BD12 /* C语言基础 */ = {
 			isa = PBXGroup;
 			children = (
+				465581C3235D6A1F00BD3FB4 /* BDO_decrypt.c */,
 				465DA13423389BDD0027E1F2 /* FileIO.c */,
 				465DA1302338990D0027E1F2 /* File */,
 				465DA1362338BB6B0027E1F2 /* File1 */,
@@ -97,6 +109,9 @@
 				4671BCB5234DD8B000BD24DA /* epoll.c */,
 				4671BCB9234F0E8B00BD24DA /* thread_server.c */,
 				46F8BC2E234F3753008DEC8D /* thread_client.c */,
+				461DD8982356B6AF00BE0846 /* fork_client.c */,
+				461DD8972356B6AF00BE0846 /* fork_server.c */,
+				461DD89B2356B74A00BE0846 /* 123.txt */,
 			);
 			path = "TCP IP网络编程";
 			sourceTree = "<group>";
@@ -104,6 +119,9 @@
 		462060832351820D0048BD12 /* UNIX网络编程 */ = {
 			isa = PBXGroup;
 			children = (
+				4600EE8A2351AE92005BCD28 /* config.h */,
+				4600EE892351AE8D005BCD28 /* unp.h */,
+				462060842351AA3C0048BD12 /* day_time.c */,
 			);
 			path = "UNIX网络编程";
 			sourceTree = "<group>";
@@ -197,11 +215,15 @@
 				465DA138233A0E0E0027E1F2 /* tcp_server.c in Sources */,
 				465DA147233DB8540027E1F2 /* half_close_client.c in Sources */,
 				465DA13523389BDD0027E1F2 /* FileIO.c in Sources */,
+				461DD89A2356B6AF00BE0846 /* fork_client.c in Sources */,
+				462060852351AA3C0048BD12 /* day_time.c in Sources */,
 				4671BCB6234DD8B000BD24DA /* epoll.c in Sources */,
 				465DA149234050BE0027E1F2 /* fork.c in Sources */,
 				46E83239232A3E9300A5B9E2 /* GuessNumber.c in Sources */,
 				465DA13A233A0E1A0027E1F2 /* tcp_client.c in Sources */,
+				465581C4235D6A2000BD3FB4 /* BDO_decrypt.c in Sources */,
 				4695C7FE234C66BB00984561 /* select.c in Sources */,
+				461DD8992356B6AF00BE0846 /* fork_server.c in Sources */,
 				4671BCBA234F0E8B00BD24DA /* thread_server.c in Sources */,
 				464CFF0C231D2232003C04AA /* main.m in Sources */,
 				465DA13F233C55C90027E1F2 /* udp_client.c in Sources */,

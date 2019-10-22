@@ -23,7 +23,7 @@ void get_name_by_ip(int argc, char *argv[]);
 
 
 
-int  main(int argc, char *argv[])
+int  main1(int argc, char *argv[])
 {
     get_name_by_ip(argc, argv);
     return 0;
