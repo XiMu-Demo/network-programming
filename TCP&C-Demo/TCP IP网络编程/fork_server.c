@@ -281,9 +281,9 @@ int muliti_pipe_process_server(int argc, char *argv[])
     return 0;
 }
 
-int main231122(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    muliti_pipe_process_server(argc, argv);
+    remove_zombine();
   
     return 0;
 
