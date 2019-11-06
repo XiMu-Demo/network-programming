@@ -181,6 +181,7 @@ struct in_pktinfo1 {
 #define	MAXLINE		4096	/* max text line length */
 #define	MAXSOCKADDR  128	/* max socket address structure size */
 #define	BUFFSIZE	8192	/* buffer size for reads and writes */
+#define PRINTN (printf("\n"), printf)
 
 /* Define some port number that can be used for client-servers */
 #define	SERV_PORT		 9877			/* TCP and UDP client-servers */
@@ -232,6 +233,9 @@ struct timespec {
 /* $$.Ib tv_nsec$$ */
 #endif
 /* end unph */
+
+void     printfn(const char* format, ...);
+
 
 			/* prototypes for our own library functions */
 int		 connect_nonb(int, const SA *, socklen_t, int);

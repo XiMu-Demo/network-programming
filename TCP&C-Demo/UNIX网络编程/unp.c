@@ -1,13 +1,98 @@
 //
-//  tcp_fun.c
+//  unp.c
 //  TCP&C-Demo
 //
-//  Created by sheng wang on 2019/11/4.
+//  Created by sheng wang on 2019/11/5.
 //  Copyright © 2019 feisu. All rights reserved.
 //
 
 #include "unp.h"
+#include <stdarg.h>
 
+
+//MARK: - read/write
+
+
+
+
+ssize_t                        /* Read "n" bytes from a descriptor. */
+readn(int fd, void *vptr, size_t n)
+{
+    size_t    nleft;
+    ssize_t    nread;
+    char    *ptr;
+
+    ptr = vptr;
+    nleft = n;
+    while (nleft > 0) {
+        if ( (nread = read(fd, ptr, nleft)) < 0) {
+            if (errno == EINTR)
+                nread = 0;        /* and call read() again */
+            else
+                return(-1);
+        } else if (nread == 0)
+            break;                /* EOF */
+
+        nleft -= nread;
+        ptr   += nread;
+    }
+    return(n - nleft);        /* return >= 0 */
+}
+
+
+ssize_t                        /* Write "n" bytes to a descriptor. */
+writen(int fd, const void *vptr, size_t n)
+{
+    size_t        nleft;
+    ssize_t        nwritten;
+    const char    *ptr;
+
+    ptr = vptr;
+    nleft = n;
+    while (nleft > 0) {
+        if ( (nwritten = write(fd, ptr, nleft)) <= 0) {
+            if (nwritten < 0 && errno == EINTR)
+                nwritten = 0;        /* and call write() again */
+            else
+                return(-1);            /* error */
+        }
+
+        nleft -= nwritten;
+        ptr   += nwritten;
+    }
+    return(n);
+}
+
+
+ssize_t
+readline(int fd, void *vptr, size_t maxlen)
+{
+    ssize_t    n, rc;
+    char    c, *ptr;
+
+    ptr = vptr;
+    for (n = 1; n < maxlen; n++) {
+again:
+        if ( (rc = read(fd, &c, 1)) == 1) {//每个字节都调用read，会导致该函数非常缓慢
+            *ptr++ = c;
+            if (c == '\n')
+                break;    /* newline is stored, like fgets() */
+        } else if (rc == 0) {//读到文件末尾了
+            *ptr = 0;//末尾置零
+            return(n - 1);    /* EOF, n - 1 bytes were read */
+        } else {
+            if (errno == EINTR)
+                goto again;
+            return(-1);        /* error, errno set by read() */
+        }
+    }
+
+    *ptr = 0;    /* null terminate like fgets() */
+    return(n);
+}
+
+
+//MARK: - TCP FUN
 void ip_address_convert(void)
 {
     char IPdotdec[20]; //存放点分十进制IP地址
@@ -90,15 +175,4 @@ void sock_set_addr(struct sockaddr *sa, socklen_t salen, const void *addr)
 #endif
     }
     return;
-}
-
-
-
-int main(int argc, const char * argv[] )
-{
-    char buf[10];
-    ssize_t n;
-    while((n = read(0,buf,10)) > 0){//  海燕高尔基在苍茫的大海上狂风卷积
-        write(1,buf,n);//从buf中输出n个字节的信息到标准输出中return 0;
-    }
 }

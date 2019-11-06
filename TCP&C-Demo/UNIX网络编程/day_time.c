@@ -8,17 +8,17 @@
 
 #include <stdio.h>
 #include    "unp.h"
+#include "unp.c"
+
 
 int
-main112111(int argc, char *argv[])
+main(int argc, char *argv[])
 {
     int                    sockfd;
     long                    n;
     char                recvline[MAXLINE + 1];
     struct sockaddr_in    servaddr;
     
-    printf("xxxxxxx");
-
     if (argc != 2){
         puts("usage: a.out <IPaddress>");
         return 0;
@@ -33,11 +33,11 @@ main112111(int argc, char *argv[])
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port   = htons(13);    /* daytime server */
-    printf("inet_pton  for %s--%d", argv[1], servaddr.sin_port);
+    printf("%s--%d \n", argv[1], servaddr.sin_port);
 
     if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0)//把argv[1]的字符串ip地址转换为二进制地址赋值给servaddr.sin_addr
     {
-        printf("inet_pton error for %s--%d", argv[1], servaddr.sin_addr.s_addr);
+        printf("inet_pton error for %s--%d \n", argv[1], servaddr.sin_addr.s_addr);
         return 0;
     }
 
