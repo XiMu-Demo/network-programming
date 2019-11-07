@@ -28,7 +28,9 @@
 #include	<unistd.h>
 #include	<sys/wait.h>
 #include	<sys/un.h>		/* for Unix domain sockets */
-#include <assert.h>
+#include    <assert.h>
+#include    <signal.h>
+
 #ifdef	HAVE_SYS_SELECT_H
 # include	<sys/select.h>	/* for convenience */
 #endif

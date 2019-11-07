@@ -12,9 +12,6 @@
 
 //MARK: - read/write
 
-
-
-
 ssize_t                        /* Read "n" bytes from a descriptor. */
 readn(int fd, void *vptr, size_t n)
 {
@@ -64,30 +61,70 @@ writen(int fd, const void *vptr, size_t n)
 }
 
 
-ssize_t
-readline(int fd, void *vptr, size_t maxlen)
+//MARK: read 版本1
+
+static ssize_t    read_cnt = 0;
+static char    *read_ptr;
+static char    read_buf[MAXLINE];
+
+static ssize_t _my_read(int fd, char *ptr)
 {
-    ssize_t    n, rc;
+
+    if (read_cnt <= 0) {
+    again:
+        if ( (read_cnt = read(fd, read_buf, sizeof(read_buf))) < 0){
+            if (errno == EINTR) {
+                goto  again;
+            }
+            return (-1);
+        }
+        else if (read_cnt == 0){
+            return 0;
+        }
+        read_ptr = read_buf;//把read_ptr赋值到read_buf的第一个char字符所在的指针
+    }
+    read_cnt--;
+    /*ptr内容指向read_buf的第一个字符，虽然每次都读取了MAXLINE个字符，但是实际上只把第一个字符传出去。
+    这里就是该函数的意图所在，以为如果直接用read函数，那么read函数的缓冲区对其他函数来说就是个黑匣子，此处通过静态变量暴露出去的read_buf
+     让其他函数可以知道此事缓冲区内部的内容
+     */
+    return(1);
+    *ptr = *read_ptr++ ;
+}
+
+
+ssize_t _readline(int fd, void *vptr, size_t maxlen)
+{
+    int        n;
+    ssize_t rc;
     char    c, *ptr;
 
     ptr = vptr;
     for (n = 1; n < maxlen; n++) {
-again:
-        if ( (rc = read(fd, &c, 1)) == 1) {//每个字节都调用read，会导致该函数非常缓慢
-            *ptr++ = c;
+//        if ( (rc = _my_read(fd, &c)) == 1) {
+        if ( (rc = read(fd, &c, 1)) == 1) {
+            *ptr++ = c;//每次用_my_read函数读取一个char c，然后存入ptr，也就是vptr里面，然后指针右移，以便存入下一个char c
             if (c == '\n')
-                break;    /* newline is stored, like fgets() */
-        } else if (rc == 0) {//读到文件末尾了
-            *ptr = 0;//末尾置零
+                break;
+        } else if (rc == 0) {
+            *ptr = 0;
+            printf("读取到了文件末尾EOF \n");
             return(n - 1);    /* EOF, n - 1 bytes were read */
-        } else {
-            if (errno == EINTR)
-                goto again;
-            return(-1);        /* error, errno set by read() */
+        } else{
+            printf("readline error \n");
+            return(-1);    /* error */
         }
     }
 
-    *ptr = 0;    /* null terminate like fgets() */
+    *ptr = 0;
+    return(n);
+}
+
+
+ssize_t Readline(int fd, void *ptr, size_t maxlen)
+{
+    ssize_t        n;
+    n = _readline(fd, ptr, maxlen);
     return(n);
 }
 
@@ -173,6 +210,86 @@ void sock_set_addr(struct sockaddr *sa, socklen_t salen, const void *addr)
         return;
     }
 #endif
+    }
+    return;
+}
+
+
+void str_echo(int sockfd)
+{
+    ssize_t n;
+    char buf[MAXLINE];
+    
+again:
+    while ((n = read(sockfd, buf, MAXLINE)) > 0) {
+        writen(sockfd, buf, n);
+        if (n < 0 && errno == EINTR) {
+            goto again;
+        }
+        else if (n < 0 ){
+            printf("str_echo: read error");
+        }
+    }
+}
+
+
+void str_cli(FILE *fp, int sockfd)
+{
+    char sendline[MAXLINE], recvline[MAXLINE];
+    
+    while (fgets(sendline, MAXLINE, fp) != NULL) {
+        printf("client input：%s", sendline);
+        writen(sockfd, sendline, strlen(sendline));
+        if (Readline(sockfd, recvline, MAXLINE) == 0) {
+            printf("str_cli: server terminated prematurely \n");
+        }
+        printf("message from server: %s \n", recvline);
+    }
+}
+
+
+//MARK: - 信号处理
+
+Sigfunc* Signal(int signo, Sigfunc* func)
+{
+    struct sigaction act, oldact;
+    act.sa_handler = func;
+    //sa_mask置空，意味着除了被捕获的信号之外的信号都不会被阻断
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    
+    if (signo == SIGALRM) {
+#ifdef SA_INTERRUPT
+        act.sa_flags |= SA_INTERRUPT;
+#endif
+    }
+    else{
+        /*
+         一些IO系统调用执行时, 如 read 等待输入期间, 如果收到一个信号,系统将中断read, 转而执行信号处理函数. 当信号处理返回后, 系统遇到了一个问题:
+         是重新开始这个系统调用, 还是让系统调用失败?早期UNIX系统的做法是, 中断系统调用, 并让系统调用失败, 比如read返回 -1, 同时设置 errno 为
+         EINTR中断了的系统调用是没有完成的调用, 它的失败是临时性的, 如果再次调用则可能成功, 这并不是真正的失败, 所以要对这种情况进行处理:
+         我们可以从信号的角度来解决这个问题,  安装信号的时候, 设置 SA_RESTART属性, 那么当信号处理函数返回后, 被该信号中断的系统调用将自动恢复.
+         */
+#ifdef SA_RESTART
+        act.sa_flags |= SA_RESTART;
+#endif
+    }
+    //oldact保存信号中断之前的设置的信号处理函数的指针，也就是act的信息
+    if (sigaction(signo, &act, &oldact) < 0) {
+        return SIG_ERR;
+    }
+    return oldact.sa_handler;
+    
+}
+
+
+void sig_chld(int signo)
+{
+    pid_t    pid;
+    int        stat;
+
+    while ( (pid = waitpid(-1, &stat, WNOHANG)) > 0) {
+        printf("child %d terminated\n", pid);
     }
     return;
 }
