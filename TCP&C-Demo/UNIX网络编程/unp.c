@@ -6,8 +6,11 @@
 //  Copyright © 2019 feisu. All rights reserved.
 //
 
-#include "unp.h"
-#include <stdarg.h>
+#include    "unp.h"
+#include    <stdarg.h>
+#include    <errno.h>        /* for definition of errno */
+#include    <stdarg.h>        /* ANSI C header file */
+#include    "ourhdr.h"
 
 
 //MARK: - read/write
@@ -247,6 +250,50 @@ void str_cli(FILE *fp, int sockfd)
     }
 }
 
+void str_cli_select(FILE* fp, int sockfd)
+{
+    int maxfd, stdineof = 0;
+    fd_set rset;
+    char buf[MAXLINE];
+    size_t n;
+    
+    
+    FD_ZERO(&rset);
+    while (1) {
+        if (stdineof == 0) {
+            FD_SET(fileno(fp), &rset);
+        }
+        FD_SET(sockfd, &rset);
+        maxfd = max(fileno(fp), sockfd) + 1;
+        select(maxfd, &rset, NULL, NULL, NULL);
+        
+        if (FD_ISSET(sockfd, &rset)) {
+            if ((n = read(sockfd, buf, MAXLINE)) == 0) {
+                //标准输入已经读取完毕，然后发送了shutdown，设置标志位stdineof
+                //如果此时在socket上面也读到了EOF，并且此时stdineof标志位为1，那么说明从服务器接收到了全部的自己发送出去的数据
+                //如果socket读到了EOF，但是stdineof不为1，那说明本地文件还没读取完，远程服务器就过早关闭了
+                if (stdineof == 1 ){
+                    return;
+                }
+                else {
+                    printf("str_cli: server terminated prematurely \n");
+                    exit(EXIT_SUCCESS);
+                }
+            }
+                write(fileno(fp), buf, n);
+        }
+        
+        if (FD_ISSET(fileno(fp), &rset)) {
+            if ((n = read(fileno(fp), buf, MAXLINE)) == 0) {
+                stdineof = 1;
+                shutdown(sockfd, SHUT_WR);
+                FD_CLR(fileno(fp), &rset);
+                continue;
+            }
+            write(sockfd, buf, n);
+        }
+    }
+}
 
 //MARK: - 信号处理
 
@@ -267,7 +314,7 @@ Sigfunc* Signal(int signo, Sigfunc* func)
         /*
          一些IO系统调用执行时, 如 read 等待输入期间, 如果收到一个信号,系统将中断read, 转而执行信号处理函数. 当信号处理返回后, 系统遇到了一个问题:
          是重新开始这个系统调用, 还是让系统调用失败?早期UNIX系统的做法是, 中断系统调用, 并让系统调用失败, 比如read返回 -1, 同时设置 errno 为
-         EINTR中断了的系统调用是没有完成的调用, 它的失败是临时性的, 如果再次调用则可能成功, 这并不是真正的失败, 所以要对这种情况进行处理:
+         EINTR, 但是中断了的系统调用是没有完成的调用, 它的失败是临时性的, 如果再次调用则可能成功, 这并不是真正的失败, 所以要对这种情况进行处理:
          我们可以从信号的角度来解决这个问题,  安装信号的时候, 设置 SA_RESTART属性, 那么当信号处理函数返回后, 被该信号中断的系统调用将自动恢复.
          */
 #ifdef SA_RESTART
@@ -291,5 +338,107 @@ void sig_chld(int signo)
     while ( (pid = waitpid(-1, &stat, WNOHANG)) > 0) {
         printf("child %d terminated\n", pid);
     }
+    return;
+}
+
+
+//MARK:- ERROR
+static void    err_doit(int, const char *, va_list);
+
+char    *pname = NULL;        /* caller can set this from argv[0] */
+
+/* Nonfatal error related to a system call.
+ * Print a message and return. */
+
+void
+/* $f err_ret $ */
+err_ret(const char *fmt, ...)
+{
+    va_list        ap;
+
+    va_start(ap, fmt);
+    err_doit(1, fmt, ap);
+    va_end(ap);
+    return;
+}
+
+/* Fatal error related to a system call.
+ * Print a message and terminate. */
+
+void
+/* $f err_sys $ */
+err_sys(const char *fmt, ...)
+{
+    va_list        ap;
+
+    va_start(ap, fmt);
+    err_doit(1, fmt, ap);
+    va_end(ap);
+    exit(1);
+}
+
+/* Fatal error related to a system call.
+ * Print a message, dump core, and terminate. */
+
+void
+/* $f err_dump $ */
+err_dump(const char *fmt, ...)
+{
+    va_list        ap;
+
+    va_start(ap, fmt);
+    err_doit(1, fmt, ap);
+    va_end(ap);
+    abort();        /* dump core and terminate */
+    exit(1);        /* shouldn't get here */
+}
+
+/* Nonfatal error unrelated to a system call.
+ * Print a message and return. */
+
+void
+/* $f err_msg $ */
+err_msg(const char *fmt, ...)
+{
+    va_list        ap;
+
+    va_start(ap, fmt);
+    err_doit(0, fmt, ap);
+    va_end(ap);
+    return;
+}
+
+/* Fatal error unrelated to a system call.
+ * Print a message and terminate. */
+
+void
+/* $f err_quit $ */
+err_quit(const char *fmt, ...)
+{
+    va_list        ap;
+
+    va_start(ap, fmt);
+    err_doit(0, fmt, ap);
+    va_end(ap);
+    exit(1);
+}
+
+/* Print a message and return to caller.
+ * Caller specifies "errnoflag". */
+
+static void
+err_doit(int errnoflag, const char *fmt, va_list ap)
+{
+    int        errno_save;
+    char    buf[MAXLINE];
+
+    errno_save = errno;        /* value caller might want printed */
+    vsprintf(buf, fmt, ap);
+    if (errnoflag)
+        sprintf(buf+strlen(buf), ": %s", strerror(errno_save));
+    strcat(buf, "\n");
+    fflush(stdout);        /* in case stdout and stderr are the same */
+    fputs(buf, stderr);
+    fflush(stderr);        /* SunOS 4.1.* doesn't grok NULL argument */
     return;
 }

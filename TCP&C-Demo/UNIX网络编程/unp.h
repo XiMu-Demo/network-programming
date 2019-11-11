@@ -274,6 +274,7 @@ char	*sock_ntop_host(const SA *, socklen_t);
 int		 sockfd_to_family(int);
 void	 str_echo(int);
 void	 str_cli(FILE *, int);
+void     str_cli_select(FILE *, int);
 int		 tcp_connect(const char *, const char *);
 int		 tcp_listen(const char *, const char *, socklen_t *);
 void	 tv_sub(struct timeval *, struct timeval *);
