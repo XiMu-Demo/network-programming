@@ -10,7 +10,7 @@
 #include    <stdarg.h>
 #include    <errno.h>        /* for definition of errno */
 #include    <stdarg.h>        /* ANSI C header file */
-#include    "ourhdr.h"
+//#include    "ourhdr.h"
 
 
 //MARK: - read/write
@@ -294,6 +294,70 @@ void str_cli_select(FILE* fp, int sockfd)
         }
     }
 }
+
+//MARK: - TCP FUN
+
+//服务端
+void dg_echo(int sockfd, SA* pcliaddr, socklen_t clientlen)
+{
+    ssize_t     n;
+    socklen_t len;
+    char msg[MAXLINE];
+    
+    while (1) {
+        len = clientlen;
+        n = recvfrom(sockfd, msg, MAXLINE, 0, pcliaddr, &len);
+        printf("message frome client: %s", msg);
+        sendto(sockfd, msg, n, 0, pcliaddr, len);
+    }
+}
+
+//客户端
+void
+dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+{
+    ssize_t                n;
+    char            sendline[MAXLINE], recvline[MAXLINE + 1];
+    socklen_t        len;
+    struct sockaddr    *preply_addr;
+
+    preply_addr = malloc(servlen);
+
+    while (fgets(sendline, MAXLINE, fp) != NULL) {
+
+        sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+        len = servlen;
+        n = recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &len);
+        if (len != servlen || memcmp(sock_ntop(pservaddr, len), sock_ntop(preply_addr, len), len) != 0) {
+            printf("reply from %s (ignored)\n",
+                    sock_ntop(preply_addr, len));
+            continue;
+        }
+
+        recvline[n] = 0;    /* null terminate */
+        printf("message frome server: %s", recvline);
+    }
+}
+
+
+void
+dg_cli_connect(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+{
+    ssize_t        n;
+    char    sendline[MAXLINE], recvline[MAXLINE + 1];
+
+    connect(sockfd, (SA *) pservaddr, servlen);
+
+    while (fgets(sendline, MAXLINE, fp) != NULL) {
+        write(sockfd, sendline, strlen(sendline));
+        n = read(sockfd, recvline, MAXLINE);
+        recvline[n] = 0;    /* null terminate */
+        fputs(recvline, stdout);
+    }
+}
+
+
 
 //MARK: - 信号处理
 

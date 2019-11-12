@@ -59,7 +59,7 @@ struct termios	*tty_termios(void);	/* {Prog raw} */
 void	 sleep_us(unsigned int);	/* {Ex sleepus} */
 ssize_t	 readn(int, void *, size_t);/* {Prog readn} */
 ssize_t	 writen(int, const void *, size_t);/* {Prog writen} */
-int		 daemon_init(void);			/* {Prog daemoninit} */
+//int		 daemon_init(void);			/* {Prog daemoninit} */
 
 int		 s_pipe(int *);				/* {Progs svr4_spipe bsd_spipe} */
 int		 recv_fd(int, ssize_t (*func)(int, const void *, size_t));

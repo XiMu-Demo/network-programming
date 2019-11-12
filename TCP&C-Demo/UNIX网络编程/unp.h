@@ -245,6 +245,7 @@ int		 connect_timeo(int, const SA *, socklen_t, int);
 void	 daemon_init(const char *, int);
 void	 daemon_inetd(const char *, int);
 void	 dg_cli(FILE *, int, const SA *, socklen_t);
+void     dg_cli_connect(FILE *, int, const SA *, socklen_t);
 void	 dg_echo(int, SA *, socklen_t);
 int		 family_to_level(int);
 char	*gf_time(void);
