@@ -13,6 +13,7 @@
 //#include    "ourhdr.h"
 
 
+
 //MARK: - read/write
 
 ssize_t                        /* Read "n" bytes from a descriptor. */
@@ -357,6 +358,54 @@ dg_cli_connect(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
     }
 }
 
+int
+tcp_listen(const char *host, const char *serv, socklen_t *addrlenp)
+{
+    int                listenfd, n;
+    const int        on = 1;
+    struct addrinfo    hints, *res, *ressave;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0)
+        err_quit("tcp_listen error for %s, %s: %s",
+                 host, serv, gai_strerror(n));
+    ressave = res;
+
+    do {
+        listenfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (listenfd < 0)
+            continue;        /* error, try next one */
+
+        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+        if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
+            break;            /* success */
+
+        close(listenfd);    /* bind error, close and try next one */
+    } while ( (res = res->ai_next) != NULL);
+
+    if (res == NULL)    /* errno from final socket() or bind() */
+        err_sys("tcp_listen error for %s, %s", host, serv);
+
+    listen(listenfd, LISTENQ);
+
+    if (addrlenp)
+        *addrlenp = res->ai_addrlen;    /* return size of protocol address */
+
+    freeaddrinfo(ressave);
+
+    return(listenfd);
+}
+
+int
+Tcp_listen(const char *host, const char *serv, socklen_t *addrlenp)
+{
+    return(tcp_listen(host, serv, addrlenp));
+}
+
 
 
 //MARK: - 信号处理
@@ -407,102 +456,108 @@ void sig_chld(int signo)
 
 
 //MARK:- ERROR
-static void    err_doit(int, const char *, va_list);
+int        daemon_proc;        /* set nonzero by daemon_init() */
 
-char    *pname = NULL;        /* caller can set this from argv[0] */
+static void    err_doit(int, int, const char *, va_list);
 
-/* Nonfatal error related to a system call.
- * Print a message and return. */
+/* Nonfatal error related to system call
+ * Print message and return */
 
 void
-/* $f err_ret $ */
 err_ret(const char *fmt, ...)
 {
     va_list        ap;
 
     va_start(ap, fmt);
-    err_doit(1, fmt, ap);
+    err_doit(1, LOG_INFO, fmt, ap);
     va_end(ap);
     return;
 }
 
-/* Fatal error related to a system call.
- * Print a message and terminate. */
+/* Fatal error related to system call
+ * Print message and terminate */
 
 void
-/* $f err_sys $ */
 err_sys(const char *fmt, ...)
 {
     va_list        ap;
 
     va_start(ap, fmt);
-    err_doit(1, fmt, ap);
+    err_doit(1, LOG_ERR, fmt, ap);
     va_end(ap);
     exit(1);
 }
 
-/* Fatal error related to a system call.
- * Print a message, dump core, and terminate. */
+/* Fatal error related to system call
+ * Print message, dump core, and terminate */
 
 void
-/* $f err_dump $ */
 err_dump(const char *fmt, ...)
 {
     va_list        ap;
 
     va_start(ap, fmt);
-    err_doit(1, fmt, ap);
+    err_doit(1, LOG_ERR, fmt, ap);
     va_end(ap);
     abort();        /* dump core and terminate */
     exit(1);        /* shouldn't get here */
 }
 
-/* Nonfatal error unrelated to a system call.
- * Print a message and return. */
+/* Nonfatal error unrelated to system call
+ * Print message and return */
 
 void
-/* $f err_msg $ */
 err_msg(const char *fmt, ...)
 {
     va_list        ap;
 
     va_start(ap, fmt);
-    err_doit(0, fmt, ap);
+    err_doit(0, LOG_INFO, fmt, ap);
     va_end(ap);
     return;
 }
 
-/* Fatal error unrelated to a system call.
- * Print a message and terminate. */
+/* Fatal error unrelated to system call
+ * Print message and terminate */
 
 void
-/* $f err_quit $ */
 err_quit(const char *fmt, ...)
 {
     va_list        ap;
 
     va_start(ap, fmt);
-    err_doit(0, fmt, ap);
+    err_doit(0, LOG_ERR, fmt, ap);
     va_end(ap);
     exit(1);
 }
 
-/* Print a message and return to caller.
- * Caller specifies "errnoflag". */
+/* Print message and return to caller
+ * Caller specifies "errnoflag" and "level" */
 
 static void
-err_doit(int errnoflag, const char *fmt, va_list ap)
+err_doit(int errnoflag, int level, const char *fmt, va_list ap)
 {
     int        errno_save;
-    char    buf[MAXLINE];
+    long        n;
+    char    buf[MAXLINE + 1];
 
     errno_save = errno;        /* value caller might want printed */
-    vsprintf(buf, fmt, ap);
+#ifdef    HAVE_VSNPRINTF
+    vsnprintf(buf, MAXLINE, fmt, ap);    /* safe */
+#else
+    vsprintf(buf, fmt, ap);                    /* not safe */
+#endif
+    n = strlen(buf);
     if (errnoflag)
-        sprintf(buf+strlen(buf), ": %s", strerror(errno_save));
+        snprintf(buf + n, MAXLINE - n, ": %s", strerror(errno_save));
     strcat(buf, "\n");
-    fflush(stdout);        /* in case stdout and stderr are the same */
-    fputs(buf, stderr);
-    fflush(stderr);        /* SunOS 4.1.* doesn't grok NULL argument */
+
+    if (daemon_proc) {
+        syslog(level, "%s", buf);
+    } else {
+        fflush(stdout);        /* in case stdout and stderr are the same */
+        fputs(buf, stderr);
+        fflush(stderr);
+    }
     return;
 }

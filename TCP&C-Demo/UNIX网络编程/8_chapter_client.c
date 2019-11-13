@@ -8,11 +8,12 @@
 
 #include "unp.h"
 #include "unp.c"
+#include <sys/poll.h>
 
 int main (int argc, char ** argv)
 {
     int sockfd;
-    struct sockaddr_in server_addr, client_addr;
+    struct sockaddr_in server_addr;
     
     bzero(&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -21,6 +22,6 @@ int main (int argc, char ** argv)
     
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     dg_cli_connect(stdin, sockfd, (SA *)&server_addr, sizeof(server_addr));
-    
+
     exit(EXIT_SUCCESS);
 }

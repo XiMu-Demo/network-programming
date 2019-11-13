@@ -30,7 +30,7 @@
 #include	<sys/un.h>		/* for Unix domain sockets */
 #include    <assert.h>
 #include    <signal.h>
-
+#include    <syslog.h>
 #ifdef	HAVE_SYS_SELECT_H
 # include	<sys/select.h>	/* for convenience */
 #endif
@@ -242,7 +242,7 @@ void     printfn(const char* format, ...);
 			/* prototypes for our own library functions */
 int		 connect_nonb(int, const SA *, socklen_t, int);
 int		 connect_timeo(int, const SA *, socklen_t, int);
-void	 daemon_init(const char *, int);
+int 	 daemon_init(const char *, int);
 void	 daemon_inetd(const char *, int);
 void	 dg_cli(FILE *, int, const SA *, socklen_t);
 void     dg_cli_connect(FILE *, int, const SA *, socklen_t);
