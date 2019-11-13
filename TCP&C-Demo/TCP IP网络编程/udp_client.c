@@ -16,7 +16,7 @@
 #define BUF_SIZE 1000
 static void error_handling (char *message);
 
-int main4 (int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     
     int client_sock = 0;

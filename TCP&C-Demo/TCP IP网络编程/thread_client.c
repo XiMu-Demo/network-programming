@@ -87,7 +87,7 @@ void client11 (int argc, char* argv[])
 }
 
 
-int main111(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     client(argc,argv);
     return 0;

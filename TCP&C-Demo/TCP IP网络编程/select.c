@@ -136,7 +136,7 @@ void select_console(void)
 
 
 
-int main12(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     select_server(argc,argv) ;
     return 0;

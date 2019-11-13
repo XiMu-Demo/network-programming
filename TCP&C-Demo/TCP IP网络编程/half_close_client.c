@@ -18,7 +18,7 @@
 static void error_handling (char *message);
 
 
-int main6 (int argc, char* argv[])
+int main (int argc, char* argv[])
 {
     int sock;
     FILE *fp;

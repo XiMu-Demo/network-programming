@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 
-int main3(int argc, const char * argv[]) {
+int main(int argc, const char * argv[]) {
     FILE *fp;
     printf("sdsdsdsdsdsd \n");
     printf("参数个数: %d \n", argc);

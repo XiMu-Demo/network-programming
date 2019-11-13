@@ -13,7 +13,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
-
+#include <sys/event.h>
 
 
 #define BUF_SIZE 1024
@@ -23,7 +23,7 @@ void get_name_by_ip(int argc, char *argv[]);
 
 
 
-int  main1(int argc, char *argv[])
+int  main(int argc, char *argv[])
 {
     get_name_by_ip(argc, argv);
     return 0;
@@ -65,6 +65,7 @@ void get_name_by_ip(int argc, char *argv[])
     }
     
     memset(&address, 0, sizeof(address));
+//    inet_aton(argv[1], &address.sin_addr.s_addr);
     address.sin_addr.s_addr = inet_addr(argv[1]);
     host = gethostbyaddr((char *)&address.sin_addr, 4, AF_INET);
     if (!host) {
@@ -77,7 +78,7 @@ void get_name_by_ip(int argc, char *argv[])
         printf("aliases %d :%s \n", i+1, host->h_aliases[i]);
     }
     for (i = 0; host->h_addr_list[i]; i++) {
-        printf("ip address %d :%s \n", i+1, inet_ntoa(*(struct in_addr*)host -> h_addr_list[i]));
+        printf("ip address %d :%s \n", i+1, inet_ntoa( *(struct in_addr*)host -> h_addr_list[i]) );
     }
     
 }

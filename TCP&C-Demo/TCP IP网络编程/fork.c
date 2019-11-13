@@ -19,7 +19,7 @@ int no_zombie_process_wait(void);
 int no_zombie_process_waitpid(void);
 
 
-int main11 (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 
     int status;

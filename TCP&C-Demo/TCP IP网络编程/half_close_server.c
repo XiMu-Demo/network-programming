@@ -19,7 +19,7 @@
 static void error_handling (char *message);
 
 
-int  main5(int argc, char *argv[])
+int  main(int argc, char *argv[])
 {
     int server_socket, client_socket;
     FILE *fp;

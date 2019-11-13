@@ -210,7 +210,7 @@ void multi_thread_server(int argc, char *argv[])
 
 }
 
-int main122(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     multi_thread_server(argc,argv);
     return 0;

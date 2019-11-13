@@ -145,7 +145,7 @@ static void client(int argc, char *argv[])
     close(sock);
 }
 
-int main121211(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     split_read_wirte_client(argc, argv);
     return 0;
