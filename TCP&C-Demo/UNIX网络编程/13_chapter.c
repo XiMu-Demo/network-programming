@@ -73,7 +73,7 @@ daemon_init(const char *pname, int facility)
     return (0);                /* success */
 }
 
-
+//守护进程开启时间服务
 int
 main(int argc, char **argv)
 {

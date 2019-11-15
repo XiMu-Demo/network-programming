@@ -32,7 +32,7 @@ main(int argc, char *argv[])
 
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port   = htons(13);    /* daytime server */
+    servaddr.sin_port   = htons(SERV_PORT);    /* daytime server */
     printf("%s--%d \n", argv[1], servaddr.sin_port);
 
     if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0)//把argv[1]的字符串ip地址转换为二进制地址赋值给servaddr.sin_addr

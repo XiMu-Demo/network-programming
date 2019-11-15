@@ -150,26 +150,76 @@ void ip_address_convert(void)
 }
 
 
-char *sock_ntop(const struct sockaddr *sa, socklen_t salen)
+char *
+sock_ntop(const struct sockaddr *sa, socklen_t salen)
 {
-    char portstr[8];
-    static char ipstr[128];
-    
+    char        portstr[8];
+    static char str[128];        /* Unix domain is largest */
+
     switch (sa->sa_family) {
-        case AF_INET:{
-            struct  sockaddr_in *sin = (struct sockaddr_in*)sa;
-            if (inet_ntop(AF_INET, &sin->sin_addr, ipstr, INET_ADDRSTRLEN) == NULL) {
-                return NULL;
-            }
-            if (ntohs(sin->sin_port) != 0) {
-                snprintf(portstr, sizeof(portstr), ":%d", ntohs(sin->sin_port));
-                strcat(ipstr, portstr);
-            }
-            return ipstr;
+    case AF_INET: {
+        struct sockaddr_in    *sin = (struct sockaddr_in *) sa;
+
+        if (inet_ntop(AF_INET, &sin->sin_addr, str, sizeof(str)) == NULL)
+            return(NULL);
+        if (ntohs(sin->sin_port) != 0) {
+            snprintf(portstr, sizeof(portstr), ":%d", ntohs(sin->sin_port));
+            strcat(str, portstr);
         }
+        return(str);
     }
-    return NULL;
+/* end sock_ntop */
+
+#ifdef    IPV6
+    case AF_INET6: {
+        struct sockaddr_in6    *sin6 = (struct sockaddr_in6 *) sa;
+
+        str[0] = '[';
+        if (inet_ntop(AF_INET6, &sin6->sin6_addr, str + 1, sizeof(str) - 1) == NULL)
+            return(NULL);
+        if (ntohs(sin6->sin6_port) != 0) {
+            snprintf(portstr, sizeof(portstr), "]:%d", ntohs(sin6->sin6_port));
+            strcat(str, portstr);
+            return(str);
+        }
+        return (str + 1);
+    }
+#endif
+
+#ifdef    AF_UNIX
+    case AF_UNIX: {
+        struct sockaddr_un    *unp = (struct sockaddr_un *) sa;
+
+            /* OK to have no pathname bound to the socket: happens on
+               every connect() unless client calls bind() first. */
+        if (unp->sun_path[0] == 0)
+            strcpy(str, "(no pathname bound)");
+        else
+            snprintf(str, sizeof(str), "%s", unp->sun_path);
+        return(str);
+    }
+#endif
+
+#ifdef    HAVE_SOCKADDR_DL_STRUCT
+    case AF_LINK: {
+        struct sockaddr_dl    *sdl = (struct sockaddr_dl *) sa;
+
+        if (sdl->sdl_nlen > 0)
+            snprintf(str, sizeof(str), "%*s (index %d)",
+                     sdl->sdl_nlen, &sdl->sdl_data[0], sdl->sdl_index);
+        else
+            snprintf(str, sizeof(str), "AF_LINK, index=%d", sdl->sdl_index);
+        return(str);
+    }
+#endif
+    default:
+        snprintf(str, sizeof(str), "sock_ntop: unknown AF_xxx: %d, len %d",
+                 sa->sa_family, salen);
+        return(str);
+    }
+    return (NULL);
 }
+
 
 
 void sock_set_wild(struct sockaddr *sa, socklen_t salen)
@@ -296,7 +346,89 @@ void str_cli_select(FILE* fp, int sockfd)
     }
 }
 
-//MARK: - TCP FUN
+//MARK: 基于域名和服务的tcp
+int
+tcp_listen(const char *host, const char *serv, socklen_t *addrlenp)
+{
+    int                listenfd, n;
+    const int        on = 1;
+    struct addrinfo    hints, *res, *ressave;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0)
+        err_quit("tcp_listen error for %s, %s: %s",
+                 host, serv, gai_strerror(n));
+    ressave = res;
+
+    do {
+        listenfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (listenfd < 0)
+            continue;        /* error, try next one */
+
+        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+        if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
+            break;            /* success */
+
+        close(listenfd);    /* bind error, close and try next one */
+    } while ( (res = res->ai_next) != NULL);
+
+    if (res == NULL)    /* errno from final socket() or bind() */
+        err_sys("tcp_listen error for %s, %s", host, serv);
+
+    listen(listenfd, LISTENQ);
+
+    if (addrlenp)
+        *addrlenp = res->ai_addrlen;    /* return size of protocol address */
+
+    freeaddrinfo(ressave);
+
+    return(listenfd);
+}
+
+
+
+int
+tcp_connect(const char *host, const char *serv)
+{
+    int                sockfd, n;
+    struct addrinfo    hints, *res, *ressave;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0)
+        err_quit("tcp_connect error for %s, %s: %s",
+                 host, serv, gai_strerror(n));
+    ressave = res;
+
+    do {
+        sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (sockfd < 0)
+            continue;    /* ignore this one */
+
+        if (connect(sockfd, res->ai_addr, res->ai_addrlen) == 0)
+            break;        /* success */
+
+        close(sockfd);    /* ignore this one */
+    } while ( (res = res->ai_next) != NULL);
+
+    if (res == NULL)    /* errno set from final connect() */
+        err_sys("tcp_connect error for %s, %s", host, serv);
+
+    freeaddrinfo(ressave);
+
+    return(sockfd);
+}
+
+
+
+
+//MARK: - UDP FUN
 
 //服务端
 void dg_echo(int sockfd, SA* pcliaddr, socklen_t clientlen)
@@ -341,7 +473,7 @@ dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
     }
 }
 
-
+//udp客户端使用connect连接，这样该连接的错误就可以被返回
 void
 dg_cli_connect(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
 {
@@ -358,53 +490,112 @@ dg_cli_connect(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
     }
 }
 
+//使用getaddrinfo来使用域名和服务进行udp连接
 int
-tcp_listen(const char *host, const char *serv, socklen_t *addrlenp)
+udp_client(const char *host, const char *serv, SA **saptr, socklen_t *lenp)
 {
-    int                listenfd, n;
-    const int        on = 1;
+    int                sockfd, n;
+    struct addrinfo    hints, *res, *ressave;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0)
+        err_quit("udp_client error for %s, %s: %s",
+                 host, serv, gai_strerror(n));
+    ressave = res;
+
+    do {
+        sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (sockfd >= 0)
+            break;        /* success */
+    } while ( (res = res->ai_next) != NULL);
+
+    if (res == NULL)    /* errno set from final socket() */
+        err_sys("udp_client error for %s, %s", host, serv);
+
+    *saptr = malloc(res->ai_addrlen);
+    memcpy(*saptr, res->ai_addr, res->ai_addrlen);
+    *lenp = res->ai_addrlen;
+
+    freeaddrinfo(ressave);
+
+    return(sockfd);
+}
+
+int
+udp_connect_client(const char *host, const char *serv)
+{
+    int                sockfd, n;
+    struct addrinfo    hints, *res, *ressave;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0)
+        err_quit("udp_connect error for %s, %s: %s",
+                 host, serv, gai_strerror(n));
+    ressave = res;
+
+    do {
+        sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (sockfd < 0)
+            continue;    /* ignore this one */
+
+        if (connect(sockfd, res->ai_addr, res->ai_addrlen) == 0)
+            break;        /* success */
+
+        close(sockfd);    /* ignore this one */
+    } while ( (res = res->ai_next) != NULL);
+
+    if (res == NULL)    /* errno set from final connect() */
+        err_sys("udp_connect error for %s, %s", host, serv);
+
+    freeaddrinfo(ressave);
+
+    return(sockfd);
+}
+
+int
+udp_server(const char *host, const char *serv, socklen_t *addrlenp)
+{
+    int                sockfd, n;
     struct addrinfo    hints, *res, *ressave;
 
     bzero(&hints, sizeof(struct addrinfo));
     hints.ai_flags = AI_PASSIVE;
     hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_socktype = SOCK_DGRAM;
 
     if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0)
-        err_quit("tcp_listen error for %s, %s: %s",
+        err_quit("udp_server error for %s, %s: %s",
                  host, serv, gai_strerror(n));
     ressave = res;
 
     do {
-        listenfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-        if (listenfd < 0)
-            continue;        /* error, try next one */
+        sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (sockfd < 0)
+            continue;        /* error - try next one */
 
-        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-        if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
+        if (bind(sockfd, res->ai_addr, res->ai_addrlen) == 0)
             break;            /* success */
 
-        close(listenfd);    /* bind error, close and try next one */
+        close(sockfd);        /* bind error - close and try next one */
     } while ( (res = res->ai_next) != NULL);
 
     if (res == NULL)    /* errno from final socket() or bind() */
-        err_sys("tcp_listen error for %s, %s", host, serv);
-
-    listen(listenfd, LISTENQ);
+        err_sys("udp_server error for %s, %s", host, serv);
 
     if (addrlenp)
         *addrlenp = res->ai_addrlen;    /* return size of protocol address */
 
     freeaddrinfo(ressave);
 
-    return(listenfd);
+    return(sockfd);
 }
 
-int
-Tcp_listen(const char *host, const char *serv, socklen_t *addrlenp)
-{
-    return(tcp_listen(host, serv, addrlenp));
-}
 
 
 
@@ -560,4 +751,25 @@ err_doit(int errnoflag, int level, const char *fmt, va_list ap)
         fflush(stderr);
     }
     return;
+}
+
+//MARK:- host name 转换
+struct addrinfo *
+Host_serv(const char *host, const char *serv, int family, int socktype)
+{
+    int                n;
+    struct addrinfo    hints, *res;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_flags = AI_CANONNAME;    /* always return canonical name */
+    hints.ai_family = family;        /* 0, AF_INET, AF_INET6, etc. */
+    hints.ai_socktype = socktype;    /* 0, SOCK_STREAM, SOCK_DGRAM, etc. */
+
+    if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0)
+        err_quit("host_serv error for %s, %s: %s",
+                 (host == NULL) ? "(no hostname)" : host,
+                 (serv == NULL) ? "(no service name)" : serv,
+                 gai_strerror(n));
+
+    return(res);    /* return pointer to first on linked list */
 }
