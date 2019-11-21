@@ -1021,10 +1021,10 @@ void get_arp_entry()
         memcpy(sin, ifi->ifi_addr, sizeof(struct sockaddr_in));
 
         //macos不支持”SIOCGARP“宏
-        if (ioctl(sockfd, SIOCGARP, &arpreq) < 0) {
-            err_ret("ioctl SIOCGARP");
-            continue;
-        }
+//        if (ioctl(sockfd, SIOCGARP, &arpreq) < 0) {
+//            err_ret("ioctl SIOCGARP");
+//            continue;
+//        }
 
         ptr = &arpreq.arp_ha.sa_data[0];
         printf("%x:%x:%x:%x:%x:%x\n", *ptr, *(ptr+1),
