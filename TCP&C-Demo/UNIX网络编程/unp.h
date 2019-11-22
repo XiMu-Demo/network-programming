@@ -273,7 +273,7 @@ struct timespec {
 /* $$.Ib tv_nsec$$ */
 #endif
 /* end unph */
-
+int      sockatmark(int fd);
 void     printfn(const char* format, ...);
 			/* prototypes for our own library functions */
 int		 connect_nonb(int, const SA *, socklen_t, int);

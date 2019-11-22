@@ -425,6 +425,16 @@ tcp_connect(const char *host, const char *serv)
     return(sockfd);
 }
 
+//每当收到一个带外数据是，都有与之关联的带外标记，该标记标示带外数据在普通数据流中的位置(也就是紧急指针：Urgent pointer的位置)。带外标记之前的都是普通数据
+int sockatmark(int fd)
+{
+    int        flag;
+
+    if (ioctl(fd, SIOCATMARK, &flag) < 0)
+        return(-1);
+    return(flag != 0);
+}
+
 
 
 
