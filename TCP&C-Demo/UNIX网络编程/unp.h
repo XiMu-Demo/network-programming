@@ -370,7 +370,10 @@ char	*gai_strerror(int);
 #endif
 
 #ifndef	HAVE_GETNAMEINFO_PROTO
-int		 getnameinfo(const SA *, socklen_t, char *, size_t, char *, size_t, int);
+//int
+//getnameinfo(const struct sockaddr *sa, socklen_t salen,
+//            char *host, size_t hostlen,
+//            char *serv, size_t servlen, int flags);
 #endif
 
 #ifndef	HAVE_GETHOSTNAME_PROTO
