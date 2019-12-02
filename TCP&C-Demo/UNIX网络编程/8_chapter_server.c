@@ -40,27 +40,27 @@ select_udp_tcp(int argc, char **argv)
     void                sig_chld(int);
 
         /* 4create listening TCP socket */
-    listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
 
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family      = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port        = htons(SERV_PORT);
 
-    Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-    Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
+    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
 
-    Listen(listenfd, LISTENQ);
+    listen(listenfd, LISTENQ);
 
         /* 4create UDP socket */
-    udpfd = Socket(AF_INET, SOCK_DGRAM, 0);
+    udpfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family      = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port        = htons(SERV_PORT);
 
-    Bind(udpfd, (SA *) &servaddr, sizeof(servaddr));
+    bind(udpfd, (SA *) &servaddr, sizeof(servaddr));
 /* end udpservselect01 */
 
 /* include udpservselect02 */
@@ -80,21 +80,21 @@ select_udp_tcp(int argc, char **argv)
 
         if (FD_ISSET(listenfd, &rset)) {
             len = sizeof(cliaddr);
-            connfd = Accept(listenfd, (SA *) &cliaddr, &len);
+            connfd = accept(listenfd, (SA *) &cliaddr, &len);
     
-            if ( (childpid = Fork()) == 0) {    /* child process */
-                Close(listenfd);    /* close listening socket */
+            if ( (childpid = fork()) == 0) {    /* child process */
+                close(listenfd);    /* close listening socket */
                 str_echo(connfd);    /* process the request */
                 exit(0);
             }
-            Close(connfd);            /* parent closes connected socket */
+            close(connfd);            /* parent closes connected socket */
         }
 
         if (FD_ISSET(udpfd, &rset)) {
             len = sizeof(cliaddr);
-            n = Recvfrom(udpfd, mesg, MAXLINE, 0, (SA *) &cliaddr, &len);
+            n = recvfrom(udpfd, mesg, MAXLINE, 0, (SA *) &cliaddr, &len);
 
-            Sendto(udpfd, mesg, n, 0, (SA *) &cliaddr, len);
+            sendto(udpfd, mesg, n, 0, (SA *) &cliaddr, len);
         }
     }
 }
