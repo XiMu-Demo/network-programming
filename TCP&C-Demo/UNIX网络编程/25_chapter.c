@@ -6,6 +6,8 @@
 //  Copyright © 2019 feisu. All rights reserved.
 //
 
+//配合8_chapter_server 使用，本文件做为client端
+
 #include    <setjmp.h>
 #include "unp.c"
 

@@ -8,7 +8,6 @@
 
 #include    "unp.c"
 #include    <pcap.h>
-
 #include    <netinet/in_systm.h>    /* required for ip.h */
 #include    <netinet/in.h>
 #include    <netinet/ip.h>
